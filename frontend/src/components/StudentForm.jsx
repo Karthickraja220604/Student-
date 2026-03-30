@@ -1,110 +1,178 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 
-function StudentForm({ onSave, onCancel, editStudent }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [course, setCourse] = useState("");
-  const [error, setError] = useState("");
+const StudentForm = ({ onSave, onCancel, editStudent }) => {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    course: "",
+  });
 
+  // ✅ store errors per field
+  const [errors, setErrors] = useState({});
+
+  // ✅ Pre-fill when editing
   useEffect(() => {
     if (editStudent) {
-      setName(editStudent.name);
-      setEmail(editStudent.email);
-      setPhone(editStudent.phone);
-      setCourse(editStudent.course);
-    } else {
-      setName("");
-      setEmail("");
-      setPhone("");
-      setCourse("");
+      setForm(editStudent);
     }
   }, [editStudent]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // ✅ Validation for single field (REAL-TIME)
+  const validateField = (name, value) => {
+    let error = "";
 
-    if (!name || !email || !phone || !course) {
-      setError("All fields are required");
-      return;
+    if (!value) {
+      error = "This field is required";
+    } else {
+      if (name === "email") {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) {
+          error = "Invalid email format";
+        }
+      }
+
+      if (name === "phone") {
+        const phoneRegex = /^[0-9]+$/;
+        if (!phoneRegex.test(value)) {
+          error = "Only numbers allowed";
+        }
+      }
     }
 
-    setError("");
+    return error;
+  };
 
-    onSave({
-      name,
-      email,
-      phone,
-      course,
+  // ✅ Handle input change (REAL-TIME validation)
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setForm({ ...form, [name]: value });
+
+    // validate instantly
+    const error = validateField(name, value);
+
+    setErrors({
+      ...errors,
+      [name]: error,
     });
   };
 
+  // ✅ Final validation before submit
+  const validateForm = () => {
+    let newErrors = {};
+
+    Object.keys(form).forEach((key) => {
+      const error = validateField(key, form[key]);
+      if (error) {
+        newErrors[key] = error;
+      }
+    });
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ✅ Submit
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    onSave(form);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
-      <div className="bg-white w-[500px] rounded shadow-lg">
-        <div className="flex justify-between items-center border-b p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+      <div className="bg-white w-full max-w-lg rounded-md shadow-lg">
+        
+        {/* Header */}
+        <div className="flex justify-between items-center border-b px-5 py-3">
           <h2 className="text-xl font-semibold">
             {editStudent ? "Edit Student" : "Add Student"}
           </h2>
-          <button onClick={onCancel}>❌</button>
+          <button onClick={onCancel}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4">
-          {error && <p className="text-red-500 mb-3">{error}</p>}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-5 space-y-3">
 
-          <div className="mb-4">
-            <label className="block mb-1">Name</label>
+          {/* NAME */}
+          <div>
             <input
-              type="text"
-              className="w-full border p-2 rounded"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              name="name"
+              placeholder="Name"
+              value={form.name}
+              onChange={handleChange}
+              className={`w-full border p-2 rounded ${
+                errors.name ? "border-red-500" : ""
+              }`}
             />
+            {errors.name && (
+              <p className="text-red-500 text-sm">{errors.name}</p>
+            )}
           </div>
 
-          <div className="mb-4">
-            <label className="block mb-1">Email</label>
+          {/* EMAIL */}
+          <div>
             <input
-              type="text"
-              className="w-full border p-2 rounded"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              className={`w-full border p-2 rounded ${
+                errors.email ? "border-red-500" : ""
+              }`}
             />
+            {errors.email && (
+              <p className="text-red-500 text-sm">{errors.email}</p>
+            )}
           </div>
 
-          <div className="mb-4">
-            <label className="block mb-1">Phone</label>
+          {/* PHONE */}
+          <div>
             <input
-              type="text"
-              className="w-full border p-2 rounded"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              name="phone"
+              placeholder="Phone"
+              value={form.phone}
+              onChange={handleChange}
+              className={`w-full border p-2 rounded ${
+                errors.phone ? "border-red-500" : ""
+              }`}
             />
+            {errors.phone && (
+              <p className="text-red-500 text-sm">{errors.phone}</p>
+            )}
           </div>
 
-          <div className="mb-4">
-            <label className="block mb-1">Course</label>
+          {/* COURSE */}
+          <div>
             <input
-              type="text"
-              className="w-full border p-2 rounded"
-              value={course}
-              onChange={(e) => setCourse(e.target.value)}
+              name="course"
+              placeholder="Course"
+              value={form.course}
+              onChange={handleChange}
+              className={`w-full border p-2 rounded ${
+                errors.course ? "border-red-500" : ""
+              }`}
             />
+            {errors.course && (
+              <p className="text-red-500 text-sm">{errors.course}</p>
+            )}
           </div>
 
-          <div className="flex justify-end gap-3 border-t pt-4">
+          {/* Buttons */}
+          <div className="flex justify-end gap-2 pt-3 border-t">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 bg-gray-300 rounded"
+              className="bg-gray-300 px-4 py-2 rounded"
             >
               Cancel
             </button>
 
-            <button
-              type="submit"
-              className="px-4 py-2 bg-green-600 text-white rounded"
-            >
+            <button className="bg-green-600 text-white px-4 py-2 rounded">
               {editStudent ? "Update" : "Add"}
             </button>
           </div>
@@ -112,6 +180,6 @@ function StudentForm({ onSave, onCancel, editStudent }) {
       </div>
     </div>
   );
-}
+};
 
 export default StudentForm;
